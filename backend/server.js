@@ -9,12 +9,16 @@ app.use(express.json());
 
 // Route imports
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const itemTypeRoutes = require('./routes/itemTypeRoutes');
+const itemVariantRoutes = require('./routes/itemVariantRoutes');
 // const customerRoutes = require('./routes/customerRoutes');
 // const expenseRoutes = require('./routes/expenseRoutes');
 // Add more as needed...
 
 // Use routes
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/itemType', itemTypeRoutes);
+app.use('/api/itemVariant', itemVariantRoutes);
 // app.use('/api/customers', customerRoutes);
 // app.use('/api/expenses', expenseRoutes);
 // etc...

@@ -2,27 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-
-type InventoryItem = {
-  id: number;
-  variant_id: number;
-  received: number;
-  sold: number;
-  qty_on_hand: number;
-  total_cost_received: number;
-  avg_cost_per_piece: number;
-  variant_name: string;
-  unit: string;
-  type_name: string;
-};
-
-type Variant = { id: number; name: string; item_type_id: number };
-type Type = { id: number; name: string };
+import { InventoryItem } from '@/types/inventory';
+import { ItemVariant, ItemType } from '@/types/item';
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [variants, setVariants] = useState<Variant[]>([]);
-  const [types, setTypes] = useState<Type[]>([]);
+  const [variants, setVariants] = useState<ItemVariant[]>([]);
+  const [types, setTypes] = useState<ItemType[]>([]);
   const [form, setForm] = useState<any>({
     variant_id: '',
     received: 0,
@@ -52,13 +38,21 @@ export default function InventoryPage() {
   };
 
   const handleSubmit = async () => {
-    await axios.post('/api/inventory', form);
-    setForm({ variant_id: '', received: 0, sold: 0, qty_on_hand: 0, total_cost_received: 0, avg_cost_per_piece: 0 });
-    fetchData();
-  };
+  await axios.post('http://localhost:5000/api/inventory', form);
+  setForm({
+    variant_id: '',
+    received: 0,
+    sold: 0,
+    qty_on_hand: 0,
+    total_cost_received: 0,
+    avg_cost_per_piece: 0
+  });
+  fetchData();
+};
+
 
   const handleDelete = async (id: number) => {
-    await axios.delete(`/api/inventory/${id}`);
+    await axios.delete(`http://localhost:5000/api/inventory/${id}`);
     fetchData();
   };
 
@@ -76,10 +70,15 @@ export default function InventoryPage() {
             </option>
           ))}
         </select>
+        <h1>Received</h1>
         <input type="number" name="received" value={form.received} onChange={handleChange} className="border p-2 w-full" placeholder="Received" />
+        <h1>Sold</h1>
         <input type="number" name="sold" value={form.sold} onChange={handleChange} className="border p-2 w-full" placeholder="Sold" />
+        <h1>Qty on Hand</h1>
         <input type="number" name="qty_on_hand" value={form.qty_on_hand} onChange={handleChange} className="border p-2 w-full" placeholder="Qty on Hand" />
+        <h1>Total Cost</h1>
         <input type="number" name="total_cost_received" value={form.total_cost_received} onChange={handleChange} className="border p-2 w-full" placeholder="Total Cost" />
+        <h1>Average Cost</h1>
         <input type="number" name="avg_cost_per_piece" value={form.avg_cost_per_piece} onChange={handleChange} className="border p-2 w-full" placeholder="Average Cost" />
         <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2">Add/Update</button>
       </div>
