@@ -12,21 +12,33 @@ import {
   updateItemVariant,
   deleteItemType,
   deleteItemVariant,
+  getDeletedItemTypes,
+  getDeletedItemVariants,
+  restoreItemType,
+  restoreItemVariant,
+  truncateItemTypes,
+  truncateItemVariants,
 } from '@/lib/api';
-
+import ItemTable, { Column } from '@/components/itemTable';
 export default function ItemsPage() {
   const [types, setTypes] = useState<ItemType[]>([]);
   const [variants, setVariants] = useState<ItemVariant[]>([]);
+  const [deletedTypes, setDeletedTypes] = useState<ItemType[]>([]);
+  const [deletedVariants, setDeletedVariants] = useState<ItemVariant[]>([]);
   const [typeForm, setTypeForm] = useState<{ name: string; id?: number }>({ name: '' });
   const [variantForm, setVariantForm] = useState<{ name: string; item_type_id: string; unit: string; id?: number }>({ name: '', item_type_id: '', unit: '' });
 
   const fetchData = async () => {
-    const [typesRes, variantsRes] = await Promise.all([
+    const [typesRes, variantsRes, deletedTypesRes, deletedVariantsRes] = await Promise.all([
       getItemTypes(),
       getItemVariants(),
+      getDeletedItemTypes(),
+      getDeletedItemVariants(),
     ]);
     setTypes(typesRes);
     setVariants(variantsRes);
+    setDeletedTypes(deletedTypesRes);
+    setDeletedVariants(deletedVariantsRes);
   };
 
   useEffect(() => {
@@ -61,6 +73,36 @@ export default function ItemsPage() {
     fetchData();
   };
 
+  const removeType = async (id: number) => {
+    await deleteItemType(id);
+    fetchData();
+  };
+
+  const removeVariant = async (id: number) => {
+    await deleteItemVariant(id);
+    fetchData();
+  };
+
+  const restoreTypeHandler = async (id: number) => {
+    await restoreItemType(id);
+    fetchData();
+  };
+
+  const restoreVariantHandler = async (id: number) => {
+    await restoreItemVariant(id);
+    fetchData();
+  };
+
+  const truncateTypesHandler = async () => {
+    await truncateItemTypes();
+    fetchData();
+  };
+
+  const truncateVariantsHandler = async () => {
+    await truncateItemVariants();
+    fetchData();
+  };
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Item Types and Variants</h1>
@@ -81,17 +123,23 @@ export default function ItemsPage() {
         </button>
       </div>
 
-      <ul className="mb-8">
-        {types.map((t) => (
-          <li key={t.id} className="flex justify-between items-center mb-1">
-            <span>{t.name}</span>
-            <div className="space-x-2">
-              <button onClick={() => setTypeForm({ name: t.name, id: t.id })} className="text-blue-500">Edit</button>
-              <button onClick={() => { deleteItemType(t.id); fetchData(); }} className="text-red-500">Delete</button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <ItemTable
+        title="Item Types"
+        columns={[{ key: 'name', label: 'Name' }] as Column[]}
+        data={types}
+        onEdit={(item) => setTypeForm({ name: (item as ItemType).name, id: (item as ItemType).id })}
+        onDelete={removeType}
+        onTruncate={truncateTypesHandler}
+      />
+
+      <ItemTable
+        title="Deleted Item Types"
+        columns={[{ key: 'name', label: 'Name' }] as Column[]}
+        data={deletedTypes}
+        onRestore={restoreTypeHandler}
+        isDeletedTable
+      />
+
 
       {/* Create/Edit Item Variant */}
       <div>
@@ -128,23 +176,32 @@ export default function ItemsPage() {
         </button>
       </div>
 
-      <ul className="mt-4">
-        {variants.map((v) => (
-          <li key={v.id} className="flex justify-between items-center mb-1">
-            <span>{v.name} — {v.unit}</span>
-            <div className="space-x-2">
-              <button
-                onClick={() => setVariantForm({ name: v.name, unit: v.unit, item_type_id: String(v.item_type_id), id: v.id })}
-                className="text-blue-500"
-              >Edit</button>
-              <button
-                onClick={() => { deleteItemVariant(v.id); fetchData(); }}
-                className="text-red-500"
-              >Delete</button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <ItemTable
+        title="Item Variants"
+        columns={[
+          { key: 'name', label: 'Name' },
+          { key: 'type_name', label: 'Type' },
+          { key: 'unit', label: 'Unit' },
+        ] as Column[]}
+        data={variants}
+        onEdit={(item) =>
+          setVariantForm({ name: (item as ItemVariant).name, unit: (item as ItemVariant).unit, item_type_id: String((item as ItemVariant).item_type_id), id: (item as ItemVariant).id })
+        }
+        onDelete={removeVariant}
+        onTruncate={truncateVariantsHandler}
+      />
+
+      <ItemTable
+        title="Deleted Item Variants"
+        columns={[
+          { key: 'name', label: 'Name' },
+          { key: 'type_name', label: 'Type' },
+          { key: 'unit', label: 'Unit' },
+        ] as Column[]}
+        data={deletedVariants}
+        onRestore={restoreVariantHandler}
+        isDeletedTable
+      />
     </div>
   );
 }

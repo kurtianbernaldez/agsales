@@ -1,4 +1,3 @@
-const { isValidElement } = require('react');
 const db = require('./db');
 
 exports.getAll = async () => {
@@ -50,4 +49,28 @@ exports.update = async (id, { name, item_type_id, unit }) => {
 exports.delete = async (id) => {
   await db.query(`UPDATE item_variants SET is_deleted = TRUE WHERE id = $1`, [id]);
   return { success: true};
+};
+
+exports.getDeleted = async () => {
+  const result = await db.query(
+    `SELECT iv.*, it.name AS type_name
+     FROM item_variants iv
+     JOIN item_types it ON iv.item_type_id = it.id
+     WHERE iv.is_deleted = TRUE
+     ORDER BY iv.id`
+  );
+  return result.rows;
+};
+
+exports.restore = async (id) => {
+  const result = await db.query(
+    `UPDATE item_variants SET is_deleted = FALSE WHERE id = $1 RETURNING *`,
+    [id]
+  );
+  return result.rows[0];
+};
+
+exports.truncate = async () => {
+  await db.query('TRUNCATE TABLE item_variants RESTART IDENTITY');
+  return { success: true };
 };

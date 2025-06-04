@@ -5,6 +5,12 @@ exports.getAll = async () => {
   return result.rows;
 };
 
+
+exports.getDeleted = async () => {
+  const result = await db.query('SELECT * FROM item_types WHERE is_deleted = TRUE ORDER BY id');
+  return result.rows;
+};
+
 exports.create = async (name) => {
   // Check for soft-deleted duplicate
   const check = await db.query(
@@ -18,7 +24,7 @@ exports.create = async (name) => {
       'UPDATE item_types SET is_deleted = FALSE WHERE id = $1 RETURNING *',
       [check.rows[0].id]
     );
-    return undelete.rows[0]; // ✅ return restored item
+    return undelete.rows[0]; //  return restored item
   }
 
   // Otherwise, insert new
@@ -41,4 +47,15 @@ exports.update = async (id, name) => {
 exports.delete = async (id) => {
     await db.query('UPDATE item_types SET is_deleted = TRUE WHERE id = $1', [id]);
     return {success: true};
+};
+
+
+exports.restore = async (id) => {
+  const result = await db.query('UPDATE item_types SET is_deleted = FALSE WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
+};
+
+exports.truncate = async () => {
+  await db.query('TRUNCATE TABLE item_types RESTART IDENTITY CASCADE');
+  return { success: true };
 };
