@@ -9,18 +9,31 @@ exports.getAllItemVariants = async (req, res) => {
   }
 };
 
+const itemVariantModel = require('../models/itemVariantModel'); // ✅ use model
+
 exports.addItemVariant = async (req, res) => {
-  try{
-    const { name, item_type_id, unit } = req.body;
-    const newVariant = await ItemVariantModel.create({ name, item_type_id, unit });
-    res.json(newVariant);
-  } catch (err) {
-    res.status(500).json({ error: err.message});
+  try {
+    const { name, unit, item_type_id } = req.body;
+
+    if (!name?.trim() || !unit?.trim() || !item_type_id) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    const result = await itemVariantModel.create({ name, unit, item_type_id }); // ✅ use model, not db
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('[ERROR] addItemVariant:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 };
 
+
+
 exports.updateItemVariant = async (req, res) => {
   try{
+    console.log('PUT /api/item-variants/:id body:', req.body); // ✅ log request body
+    console.log('PUT /api/item-variants/:id param:', req.params.id); // ✅ log ID
+
     const updated = await ItemVariantModel.update(req.params.id, req.body);
     res.json(updated);
   } catch (err) {

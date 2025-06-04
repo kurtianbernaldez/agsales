@@ -2,22 +2,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { ItemType, ItemVariant } from '@/types/item';
+import {
+  getItemTypes,
+  getItemVariants,
+  addItemType,
+  addItemVariant,
+  updateItemType,
+  updateItemVariant,
+  deleteItemType,
+  deleteItemVariant,
+} from '@/lib/api';
 
 export default function ItemsPage() {
-  const [types, setTypes] = useState< ItemType[]>([]);
-  const [variants, setVariants] = useState< ItemVariant[]>([]);
-  const [typeForm, setTypeForm] = useState({ name: '' });
-  const [variantForm, setVariantForm] = useState({ name: '', item_type_id: '', unit: '' });
+  const [types, setTypes] = useState<ItemType[]>([]);
+  const [variants, setVariants] = useState<ItemVariant[]>([]);
+  const [typeForm, setTypeForm] = useState<{ name: string; id?: number }>({ name: '' });
+  const [variantForm, setVariantForm] = useState<{ name: string; item_type_id: string; unit: string; id?: number }>({ name: '', item_type_id: '', unit: '' });
 
   const fetchData = async () => {
     const [typesRes, variantsRes] = await Promise.all([
-      axios.get('http://localhost:5000/api/item-types'),
-      axios.get('http://localhost:5000/api/item-variants'),
+      getItemTypes(),
+      getItemVariants(),
     ]);
-    setTypes(typesRes.data);
-    setVariants(variantsRes.data);
+    setTypes(typesRes);
+    setVariants(variantsRes);
   };
 
   useEffect(() => {
@@ -33,13 +42,21 @@ export default function ItemsPage() {
   };
 
   const submitType = async () => {
-    await axios.post('http://localhost:5000/api/item-types', typeForm);
+    if (typeForm.id) {
+      await updateItemType(typeForm.id, { name:typeForm.name});
+    } else {
+      await addItemType(typeForm);
+    }
     setTypeForm({ name: '' });
     fetchData();
   };
 
   const submitVariant = async () => {
-    await axios.post('http://localhost:5000/api/item-variants', variantForm);
+    if (variantForm.id) {
+      await updateItemVariant(variantForm.id, variantForm);
+    } else {
+      await addItemVariant(variantForm);
+    }
     setVariantForm({ name: '', item_type_id: '', unit: '' });
     fetchData();
   };
@@ -48,9 +65,9 @@ export default function ItemsPage() {
     <div className="p-4 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Item Types and Variants</h1>
 
-      {/* Create Item Type */}
+      {/* Create/Edit Item Type */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Create Item Type</h2>
+        <h2 className="text-xl font-semibold mb-2">{typeForm.id ? 'Edit' : 'Create'} Item Type</h2>
         <input
           type="text"
           name="name"
@@ -60,13 +77,25 @@ export default function ItemsPage() {
           placeholder="Item Type Name"
         />
         <button onClick={submitType} className="bg-green-600 text-white px-4 py-2">
-          Add Type
+          {typeForm.id ? 'Update Type' : 'Add Type'}
         </button>
       </div>
 
-      {/* Create Item Variant */}
+      <ul className="mb-8">
+        {types.map((t) => (
+          <li key={t.id} className="flex justify-between items-center mb-1">
+            <span>{t.name}</span>
+            <div className="space-x-2">
+              <button onClick={() => setTypeForm({ name: t.name, id: t.id })} className="text-blue-500">Edit</button>
+              <button onClick={() => { deleteItemType(t.id); fetchData(); }} className="text-red-500">Delete</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* Create/Edit Item Variant */}
       <div>
-        <h2 className="text-xl font-semibold mb-2">Create Item Variant</h2>
+        <h2 className="text-xl font-semibold mb-2">{variantForm.id ? 'Edit' : 'Create'} Item Variant</h2>
         <select
           name="item_type_id"
           value={variantForm.item_type_id}
@@ -75,9 +104,7 @@ export default function ItemsPage() {
         >
           <option value="">Select Type</option>
           {types.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
+            <option key={t.id} value={t.id}>{t.name}</option>
           ))}
         </select>
         <input
@@ -97,9 +124,27 @@ export default function ItemsPage() {
           placeholder="Unit (e.g., pcs, m, etc.)"
         />
         <button onClick={submitVariant} className="bg-blue-600 text-white px-4 py-2">
-          Add Variant
+          {variantForm.id ? 'Update Variant' : 'Add Variant'}
         </button>
       </div>
+
+      <ul className="mt-4">
+        {variants.map((v) => (
+          <li key={v.id} className="flex justify-between items-center mb-1">
+            <span>{v.name} — {v.unit}</span>
+            <div className="space-x-2">
+              <button
+                onClick={() => setVariantForm({ name: v.name, unit: v.unit, item_type_id: String(v.item_type_id), id: v.id })}
+                className="text-blue-500"
+              >Edit</button>
+              <button
+                onClick={() => { deleteItemVariant(v.id); fetchData(); }}
+                className="text-red-500"
+              >Delete</button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

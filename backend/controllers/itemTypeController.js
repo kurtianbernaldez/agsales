@@ -11,12 +11,21 @@ exports.getAllItemTypes = async (req, res) => {
 
 exports.addItemType = async (req, res) => {
   try {
-    const {name} = req.body;
-    const newType = await ItemTypeModel.create(name);
-    req.json(newType);  
-  } catch (err) {
-    res.status(500).json({ error: err.message});
-  } 
+    console.log('POST /api/item-types body:', req.body); // Debug log
+
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Missing item type name' });
+    }
+
+    const result = await ItemTypeModel.create(name);
+
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('[ERROR] addItemType:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
 };
 
 exports.updateItemType = async (req, res) => {
