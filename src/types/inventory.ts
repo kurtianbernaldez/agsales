@@ -1,6 +1,7 @@
 export type InventoryItem = {
   id: number;
   item_variant_id: number;
+  item_type_id: number;
   received: number;
   sold: number;
   qty_on_hand: number;

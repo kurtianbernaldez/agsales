@@ -8,4 +8,5 @@ export type ItemVariant = {
   name: string;
   item_type_id: number;
   unit: string;
+  type_name?: string;
 };

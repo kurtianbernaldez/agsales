@@ -46,3 +46,30 @@ exports.deleteItemType = async (req, res) => {
       res.status(500).json({ error: err.message});
   }
 };
+
+exports.getDeletedItemTypes = async (req, res) => {
+  try {
+    const types = await ItemTypeModel.getDeleted();
+    res.json(types);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.restoreItemType = async (req, res) => {
+  try {
+    const type = await ItemTypeModel.restore(req.params.id);
+    res.json(type);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.truncateItemTypes = async (req, res) => {
+  try {
+    const result = await ItemTypeModel.truncate();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

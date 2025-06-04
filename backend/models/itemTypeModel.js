@@ -42,3 +42,18 @@ exports.delete = async (id) => {
     await db.query('UPDATE item_types SET is_deleted = TRUE WHERE id = $1', [id]);
     return {success: true};
 };
+
+exports.getDeleted = async () => {
+  const result = await db.query('SELECT * FROM item_types WHERE is_deleted = TRUE ORDER BY id');
+  return result.rows;
+};
+
+exports.restore = async (id) => {
+  const result = await db.query('UPDATE item_types SET is_deleted = FALSE WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
+};
+
+exports.truncate = async () => {
+  await db.query('TRUNCATE TABLE item_types RESTART IDENTITY CASCADE');
+  return { success: true };
+};

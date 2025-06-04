@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // INVENTORY
 export async function getInventory() {
@@ -26,6 +26,25 @@ export async function updateInventory(id: number, item: any) {
 
 export async function deleteInventory(id: number) {
   const res = await fetch(`${BASE_URL}/api/inventory/${id}`, {
+    method: 'DELETE',
+  });
+  return res.json();
+}
+
+export async function getDeletedInventory() {
+  const res = await fetch(`${BASE_URL}/api/inventory/deleted/all`);
+  return res.json();
+}
+
+export async function restoreInventory(id: number) {
+  const res = await fetch(`${BASE_URL}/api/inventory/restore/${id}`, {
+    method: 'POST',
+  });
+  return res.json();
+}
+
+export async function truncateInventory() {
+  const res = await fetch(`${BASE_URL}/api/inventory/truncate/all`, {
     method: 'DELETE',
   });
   return res.json();
@@ -60,6 +79,21 @@ export async function deleteItemType(id: number) {
   return res.json();
 }
 
+export async function getDeletedItemTypes() {
+  const res = await fetch(`${BASE_URL}/api/item-types/deleted/all`);
+  return res.json();
+}
+
+export async function restoreItemType(id: number) {
+  const res = await fetch(`${BASE_URL}/api/item-types/restore/${id}`, { method: 'POST' });
+  return res.json();
+}
+
+export async function truncateItemTypes() {
+  const res = await fetch(`${BASE_URL}/api/item-types/truncate/all`, { method: 'DELETE' });
+  return res.json();
+}
+
 // ITEM VARIANTS
 export async function getItemVariants() {
   const res = await fetch(`${BASE_URL}/api/item-variants`);
@@ -86,5 +120,20 @@ export async function updateItemVariant(id: number, variant: any) {
 
 export async function deleteItemVariant(id: number) {
   const res = await fetch(`${BASE_URL}/api/item-variants/${id}`, { method: 'DELETE' });
+  return res.json();
+}
+
+export async function getDeletedItemVariants() {
+  const res = await fetch(`${BASE_URL}/api/item-variants/deleted/all`);
+  return res.json();
+}
+
+export async function restoreItemVariant(id: number) {
+  const res = await fetch(`${BASE_URL}/api/item-variants/restore/${id}`, { method: 'POST' });
+  return res.json();
+}
+
+export async function truncateItemVariants() {
+  const res = await fetch(`${BASE_URL}/api/item-variants/truncate/all`, { method: 'DELETE' });
   return res.json();
 }

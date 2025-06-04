@@ -49,3 +49,30 @@ exports.deleteItemVariant = async (req, res) => {
     res.status(500).json({ error: err.message});
   }
 };
+
+exports.getDeletedItemVariants = async (req, res) => {
+  try {
+    const variants = await ItemVariantModel.getDeleted();
+    res.json(variants);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.restoreItemVariant = async (req, res) => {
+  try {
+    const variant = await ItemVariantModel.restore(req.params.id);
+    res.json(variant);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.truncateItemVariants = async (req, res) => {
+  try {
+    const result = await ItemVariantModel.truncate();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
