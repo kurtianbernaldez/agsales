@@ -9,4 +9,5 @@ export type InventoryItem = {
   variant_name: string;
   unit: string;
   type_name: string;
+  type_id: number;
 };

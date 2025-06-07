@@ -27,6 +27,9 @@ export default function ItemsPage() {
   const [deletedVariants, setDeletedVariants] = useState<ItemVariant[]>([]);
   const [typeForm, setTypeForm] = useState<{ name: string; id?: number }>({ name: '' });
   const [variantForm, setVariantForm] = useState<{ name: string; item_type_id: string; unit: string; id?: number }>({ name: '', item_type_id: '', unit: '' });
+  const [variantFilter, setVariantFilter] = useState<string>('');
+  const [showDeletedTypes, setShowDeletedTypes] = useState(false);
+  const [showDeletedVariants, setShowDeletedVariants] = useState(false);
 
   const fetchData = async () => {
     const [typesRes, variantsRes, deletedTypesRes, deletedVariantsRes] = await Promise.all([
@@ -103,6 +106,13 @@ export default function ItemsPage() {
     fetchData();
   };
 
+  const filteredVariants = variantFilter
+    ? variants.filter(v => v.item_type_id === parseInt(variantFilter))
+    : variants;
+  const filteredDeletedVariants = variantFilter
+    ? deletedVariants.filter(v => v.item_type_id === parseInt(variantFilter))
+    : deletedVariants;
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Item Types and Variants</h1>
@@ -115,7 +125,7 @@ export default function ItemsPage() {
           name="name"
           value={typeForm.name}
           onChange={handleTypeChange}
-          className="border p-2 w-full mb-2"
+          className="border border-gray-300 rounded-md p-2 w-full "
           placeholder="Item Type Name"
         />
         <button onClick={submitType} className="bg-green-600 text-white px-4 py-2">
@@ -132,13 +142,22 @@ export default function ItemsPage() {
         onTruncate={truncateTypesHandler}
       />
 
-      <ItemTable
-        title="Deleted Item Types"
-        columns={[{ key: 'name', label: 'Name' }] as Column[]}
-        data={deletedTypes}
-        onRestore={restoreTypeHandler}
-        isDeletedTable
-      />
+      <button
+        onClick={() => setShowDeletedTypes((p) => !p)}
+        className="mb-4 text-sm text-blue-600 underline"
+      >
+        {showDeletedTypes ? 'Hide Deleted Types' : 'Show Deleted Types'}
+      </button>
+
+      {showDeletedTypes && (
+        <ItemTable
+          title="Deleted Item Types"
+          columns={[{ key: 'name', label: 'Name' }] as Column[]}
+          data={deletedTypes}
+          onRestore={restoreTypeHandler}
+          isDeletedTable
+        />
+      )}
 
 
       {/* Create/Edit Item Variant */}
@@ -160,7 +179,7 @@ export default function ItemsPage() {
           name="name"
           value={variantForm.name}
           onChange={handleVariantChange}
-          className="border p-2 w-full mb-2"
+          className="border border-gray-300 rounded-md p-2 w-full mb-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Variant Name"
         />
         <input
@@ -168,13 +187,28 @@ export default function ItemsPage() {
           name="unit"
           value={variantForm.unit}
           onChange={handleVariantChange}
-          className="border p-2 w-full mb-2"
+          className="border border-gray-300 rounded-md p-2 w-full mb-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Unit (e.g., pcs, m, etc.)"
         />
-        <button onClick={submitVariant} className="bg-blue-600 text-white px-4 py-2">
+        <button onClick={submitVariant} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
           {variantForm.id ? 'Update Variant' : 'Add Variant'}
         </button>
       </div>
+      
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1">Filter Variants by Type</label>
+        <select
+          value={variantFilter}
+          onChange={(e) => setVariantFilter(e.target.value)}
+          className="border border-gray-300 rounded-md p-2 w-full focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Types</option>
+          {types.map((t) => (
+            <option  className="text-blue-600"key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+      </div>
+
 
       <ItemTable
         title="Item Variants"
@@ -183,25 +217,39 @@ export default function ItemsPage() {
           { key: 'type_name', label: 'Type' },
           { key: 'unit', label: 'Unit' },
         ] as Column[]}
-        data={variants}
+        data={filteredVariants}
         onEdit={(item) =>
-          setVariantForm({ name: (item as ItemVariant).name, unit: (item as ItemVariant).unit, item_type_id: String((item as ItemVariant).item_type_id), id: (item as ItemVariant).id })
+          setVariantForm({
+            name: (item as ItemVariant).name,
+            unit: (item as ItemVariant).unit,
+            item_type_id: String((item as ItemVariant).item_type_id),
+            id: (item as ItemVariant).id,
+          })
         }
         onDelete={removeVariant}
         onTruncate={truncateVariantsHandler}
       />
 
-      <ItemTable
-        title="Deleted Item Variants"
-        columns={[
-          { key: 'name', label: 'Name' },
-          { key: 'type_name', label: 'Type' },
-          { key: 'unit', label: 'Unit' },
-        ] as Column[]}
-        data={deletedVariants}
-        onRestore={restoreVariantHandler}
-        isDeletedTable
-      />
+      <button
+        onClick={() => setShowDeletedVariants((p) => !p)}
+        className="mb-4 text-sm text-blue-600 underline"
+      >
+        {showDeletedVariants ? 'Hide Deleted Variants' : 'Show Deleted Variants'}
+      </button>
+
+      {showDeletedVariants && (
+        <ItemTable
+          title="Deleted Item Variants"
+          columns={[
+            { key: 'name', label: 'Name' },
+            { key: 'type_name', label: 'Type' },
+            { key: 'unit', label: 'Unit' },
+          ] as Column[]}
+          data={filteredDeletedVariants}
+          onRestore={restoreVariantHandler}
+          isDeletedTable
+        />
+      )}
     </div>
   );
 }
