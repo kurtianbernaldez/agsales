@@ -36,3 +36,31 @@ exports.deleteInventory = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+exports.getDeletedInventory = async (req, res) => {
+  try {
+    const rows = await InventoryModel.getDeleted();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.mesage});
+  }
+};
+
+exports.restoreInventory = async (req, res) => {
+  try {
+    const item = await InventoryModel.restore(req.params.id);
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ error: err.meesage});
+  }
+};
+
+exports.truncateInventory = async (req, res) => {
+  try {
+    const result = await InventoryModel.truncate();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({error: err.message});
+  }
+};

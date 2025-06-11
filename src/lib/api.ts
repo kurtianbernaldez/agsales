@@ -31,6 +31,21 @@ export async function deleteInventory(id: number) {
   return res.json();
 }
 
+
+export async function getDeletedInventory() {
+  const res = await fetch(`${BASE_URL}/api/inventory/deleted/all`);
+  return res.json();
+}
+
+export async function restoreInventory(id: number) {
+  const res = await fetch(`${BASE_URL}/api/inventory/restore/${id}`, { method: 'POST' });
+  return res.json();
+}
+
+export async function truncateInventory() {
+  const res = await fetch(`${BASE_URL}/api/inventory/truncate/all`, { method: 'DELETE' });
+  return res.json();
+}
 // ITEM TYPES
 export async function getItemTypes() {
   const res = await fetch(`${BASE_URL}/api/item-types`);

@@ -2,7 +2,8 @@ const db = require('./db');
 
 exports.getAll = async () => {
   const result = await db.query(
-    `SELECT inv.*, iv.name AS variant_name, iv.unit, it.name AS type_name
+    `SELECT inv.*, iv.name AS variant_name, iv.unit,
+            it.name AS type_name, it.id AS type_id
      FROM inventory inv
      JOIN item_variants iv ON inv.item_variant_id = iv.id
      JOIN item_types it ON iv.item_type_id = it.id
@@ -37,5 +38,31 @@ exports.update = async (id, { received, sold, qty_on_hand, total_cost_received, 
 
 exports.delete = async (id) => {
   await db.query(`UPDATE inventory SET is_deleted = TRUE WHERE id = $1`, [id]);
+  return { success: true };
+};
+
+exports.getDeleted = async () => {
+  const result = await db.query(
+    `SELECT inv.*, iv.name AS variant_name, iv.unit,
+            it.name AS type_name, it.id AS type_id
+     FROM inventory inv
+     JOIN item_variants iv ON inv.item_variant_id = iv.id
+     JOIN item_types it ON iv.item_type_id = it.id
+     WHERE inv.is_deleted = TRUE
+     ORDER BY inv.id`
+  );
+  return result.rows;
+};
+
+exports.restore = async (id) => {
+  const result = await db.query(
+    'UPDATE inventory SET is_deleted = FALSE WHERE id = $1 RETURNING *',
+    [id]
+  );
+  return result.rows[0];
+};
+
+exports.truncate = async () => {
+  await db.query('TRUNCATE TABLE inventory RESTART IDENTITY CASCADE');
   return { success: true };
 };
