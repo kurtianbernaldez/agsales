@@ -21,7 +21,7 @@ export default function ItemTable<T extends { id: number }>(props: ItemTableProp
   return (
     <div className="mb-8 bg-white dark:bg-gray-800 shadow rounded-md overflow-hidden">
       {title && <h2 className="text-xl font-semibold px-4 py-2 border-b">{title}</h2>}
-      {onTruncate && (
+      {onTruncate && !isDeletedTable && (
         <button
           onClick={onTruncate}
           className="ml-4 mt-2 text-sm text-red-600">

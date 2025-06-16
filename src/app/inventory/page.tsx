@@ -1,8 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { InventoryItem } from '@/types/inventory';
-import { ItemVariant, ItemType } from '@/types/item';
+import { 
+  InventoryItem, 
+  InventoryFormData,
+  ItemVariant, 
+  ItemType 
+} from '@/types/item';
 import {
   getInventory,
   addInventory,
@@ -11,6 +15,7 @@ import {
   restoreInventory,
   getItemTypes,
   getItemVariants,
+  updateInventory,
 } from '@/lib/api';
 import ItemTable, { Column } from '@/components/itemTable';
 
@@ -21,26 +26,35 @@ export default function InventoryPage() {
   const [deletedInventory, setDeletedInventory] = useState<InventoryItem[]>([]);
   const [filterType, setFilterType] = useState<string>('');
   const [showDeleted, setShowDeleted] = useState(false);
-  const [form, setForm] = useState<any>({
-    variant_id: '',
+  const [form, setForm] = useState<InventoryFormData & { id?: number }>({
+    item_variant_id: 0,
+    item_type_id: 0,
     received: 0,
     sold: 0,
     qty_on_hand: 0,
     total_cost_received: 0,
-    avg_cost_per_piece: 0,
+    avg_cost_per_piece: 0
   });
 
   const fetchData = async () => {
-    const [invRes, varRes, typeRes, delRes] = await Promise.all([
-      getInventory(),
-      getItemVariants(),
-      getItemTypes(),
-      getDeletedInventory(),
-    ]);
-    setInventory(invRes);
-    setVariants(varRes);
-    setTypes(typeRes);
-    setDeletedInventory(delRes);
+    try {
+      const [invRes, varRes, typeRes, delRes] = await Promise.all([
+        getInventory(),
+        getItemVariants(),
+        getItemTypes(),
+        getDeletedInventory(),
+      ]);
+      setInventory(Array.isArray(invRes) ? invRes : []);
+      setVariants(Array.isArray(varRes) ? varRes : []);
+      setTypes(Array.isArray(typeRes) ? typeRes : []);
+      setDeletedInventory(Array.isArray(delRes) ? delRes : []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setInventory([]);
+      setVariants([]);
+      setTypes([]);
+      setDeletedInventory([]);
+    }
   };
 
   useEffect(() => {
@@ -48,38 +62,54 @@ export default function InventoryPage() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'item_variant_id') {
+      // When variant is selected, automatically set the item_type_id
+      const selectedVariant = variants.find(v => v.id === parseInt(value));
+      setForm({ 
+        ...form, 
+        [name]: parseInt(value),
+        item_type_id: selectedVariant ? selectedVariant.item_type_id : 0
+      });
+    } else {
+      setForm({ ...form, [name]: parseFloat(value) || 0 });
+    }
   };
 
   const handleSubmit = async () => {
-  await addInventory(form);
-  setForm({
-    variant_id: '',
-    received: 0,
-    sold: 0,
-    qty_on_hand: 0,
-    total_cost_received: 0,
-    avg_cost_per_piece: 0
-  });
-  fetchData();
-};
-
+    if (form.id) {
+      await updateInventory(form.id, form);
+    } else {
+      await addInventory(form);
+    }
+    setForm({
+      item_variant_id: 0,
+      item_type_id: 0,
+      received: 0,
+      sold: 0,
+      qty_on_hand: 0,
+      total_cost_received: 0,
+      avg_cost_per_piece: 0,
+      id: undefined
+    });
+    fetchData();
+  };
 
   const handleDelete = async (id: number) => {
     await deleteInventory(id);
     fetchData();
   };
 
-    const handleRestore = async (id: number) => {
+  const handleRestore = async (id: number) => {
     await restoreInventory(id);
     fetchData();
   };
 
   const filteredInventory = filterType
-    ? inventory.filter((i) => i.type_id === parseInt(filterType))
+    ? inventory.filter((i) => i.item_type_id === parseInt(filterType))
     : inventory;
   const filteredDeletedInventory = filterType
-    ? deletedInventory.filter((i) => i.type_id === parseInt(filterType))
+    ? deletedInventory.filter((i) => i.item_type_id === parseInt(filterType))
     : deletedInventory;
 
   return (
@@ -89,8 +119,8 @@ export default function InventoryPage() {
       {/* Form */}
       <div className="space-y-2">
         <select
-          name="variant_id"
-          value={form.variant_id}
+          name="item_variant_id"
+          value={form.item_variant_id}
           onChange={handleChange}
           className="border border-gray-300 rounded-md p-2 w-full focus:ring-blue-500 focus:border-blue-500"
         >
@@ -150,7 +180,7 @@ export default function InventoryPage() {
           onClick={handleSubmit}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
         >
-          Add/Update
+          {form.id ? 'Update' : 'Add'}
         </button>
       </div>
 
@@ -185,6 +215,16 @@ export default function InventoryPage() {
           ] as Column[]}
           data={filteredInventory}
           onDelete={handleDelete}
+          onEdit={(item) => setForm({
+            item_variant_id: item.item_variant_id,
+            item_type_id: item.item_type_id,
+            received: item.received,
+            sold: item.sold,
+            qty_on_hand: item.qty_on_hand,
+            total_cost_received: item.total_cost_received,
+            avg_cost_per_piece: item.avg_cost_per_piece,
+            id: item.id,
+          })}
         />
 
         <button

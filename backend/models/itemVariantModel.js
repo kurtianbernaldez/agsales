@@ -71,6 +71,19 @@ exports.restore = async (id) => {
 };
 
 exports.truncate = async () => {
-  await db.query('TRUNCATE TABLE item_variants RESTART IDENTITY');
-  return { success: true };
+  try {
+    // First disable foreign key constraints
+    await db.query('SET CONSTRAINTS ALL DEFERRED');
+    
+    // Then truncate the table
+    await db.query('TRUNCATE TABLE item_variants RESTART IDENTITY CASCADE');
+    
+    // Finally re-enable foreign key constraints
+    await db.query('SET CONSTRAINTS ALL IMMEDIATE');
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error truncating item variants:', error);
+    throw error;
+  }
 };

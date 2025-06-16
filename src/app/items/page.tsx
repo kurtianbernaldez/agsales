@@ -2,7 +2,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ItemType, ItemVariant } from '@/types/item';
+import { 
+  ItemType, 
+  ItemTypeFormData, 
+  ItemVariant, 
+  ItemVariantFormData 
+} from '@/types/item';
 import {
   getItemTypes,
   getItemVariants,
@@ -18,30 +23,44 @@ import {
   restoreItemVariant,
   truncateItemTypes,
   truncateItemVariants,
+  truncateInventory,
 } from '@/lib/api';
 import ItemTable, { Column } from '@/components/itemTable';
+
 export default function ItemsPage() {
   const [types, setTypes] = useState<ItemType[]>([]);
   const [variants, setVariants] = useState<ItemVariant[]>([]);
   const [deletedTypes, setDeletedTypes] = useState<ItemType[]>([]);
   const [deletedVariants, setDeletedVariants] = useState<ItemVariant[]>([]);
-  const [typeForm, setTypeForm] = useState<{ name: string; id?: number }>({ name: '' });
-  const [variantForm, setVariantForm] = useState<{ name: string; item_type_id: string; unit: string; id?: number }>({ name: '', item_type_id: '', unit: '' });
+  const [typeForm, setTypeForm] = useState<ItemTypeFormData & { id?: number }>({ name: '' });
+  const [variantForm, setVariantForm] = useState<ItemVariantFormData & { id?: number }>({ 
+    name: '', 
+    item_type_id: 0, 
+    unit: '' 
+  });
   const [variantFilter, setVariantFilter] = useState<string>('');
   const [showDeletedTypes, setShowDeletedTypes] = useState(false);
   const [showDeletedVariants, setShowDeletedVariants] = useState(false);
 
   const fetchData = async () => {
-    const [typesRes, variantsRes, deletedTypesRes, deletedVariantsRes] = await Promise.all([
-      getItemTypes(),
-      getItemVariants(),
-      getDeletedItemTypes(),
-      getDeletedItemVariants(),
-    ]);
-    setTypes(typesRes);
-    setVariants(variantsRes);
-    setDeletedTypes(deletedTypesRes);
-    setDeletedVariants(deletedVariantsRes);
+    try {
+      const [typesRes, variantsRes, deletedTypesRes, deletedVariantsRes] = await Promise.all([
+        getItemTypes(),
+        getItemVariants(),
+        getDeletedItemTypes(),
+        getDeletedItemVariants(),
+      ]);
+      setTypes(Array.isArray(typesRes) ? typesRes : []);
+      setVariants(Array.isArray(variantsRes) ? variantsRes : []);
+      setDeletedTypes(Array.isArray(deletedTypesRes) ? deletedTypesRes : []);
+      setDeletedVariants(Array.isArray(deletedVariantsRes) ? deletedVariantsRes : []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setTypes([]);
+      setVariants([]);
+      setDeletedTypes([]);
+      setDeletedVariants([]);
+    }
   };
 
   useEffect(() => {
@@ -72,7 +91,7 @@ export default function ItemsPage() {
     } else {
       await addItemVariant(variantForm);
     }
-    setVariantForm({ name: '', item_type_id: '', unit: '' });
+    setVariantForm({ name: '', item_type_id: 0, unit: '' });
     fetchData();
   };
 
@@ -97,13 +116,29 @@ export default function ItemsPage() {
   };
 
   const truncateTypesHandler = async () => {
-    await truncateItemTypes();
-    fetchData();
+    try {
+      // First truncate inventory (which references both variants and types)
+      await truncateInventory();
+      // Then truncate variants (which reference types)
+      await truncateItemVariants();
+      // Finally truncate types
+      await truncateItemTypes();
+      fetchData();
+    } catch (error) {
+      console.error('Error truncating types:', error);
+    }
   };
 
   const truncateVariantsHandler = async () => {
-    await truncateItemVariants();
-    fetchData();
+    try {
+      // First truncate inventory (which references variants)
+      await truncateInventory();
+      // Then truncate variants
+      await truncateItemVariants();
+      fetchData();
+    } catch (error) {
+      console.error('Error truncating variants:', error);
+    }
   };
 
   const filteredVariants = variantFilter
@@ -222,7 +257,7 @@ export default function ItemsPage() {
           setVariantForm({
             name: (item as ItemVariant).name,
             unit: (item as ItemVariant).unit,
-            item_type_id: String((item as ItemVariant).item_type_id),
+            item_type_id: (item as ItemVariant).item_type_id,
             id: (item as ItemVariant).id,
           })
         }
